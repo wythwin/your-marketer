@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Answer a few questions about your business and get a personalized marketing starting point plus an actionable to-do checklist. Free, no sign-up.">
+  <meta name="color-scheme" content="light">
+  <title>Your Marketer — Find Your Starting Point</title>
+
+  <!-- Fonts: Poppins (headings) + Open Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================
+       DESIGN TOKENS
+       ============================================ */
+    :root {
+      /* Brand — indigo / violet */
+      --primary:        #4f46e5;
+      --primary-hover:  #4338ca;
+      --primary-soft:   #eef2ff;
+      --accent:         #7c3aed;
+
+      /* Surfaces & text (light mode, WCAG AA) */
+      --bg:             #f4f5fb;
+      --surface:        #ffffff;
+      --text:           #1e293b;  /* slate-800 */
+      --text-muted:     #64748b;  /* slate-500 — passes 4.5:1 */
+      --text-faint:     #94a3b8;  /* slate-400 — large/decorative only */
+      --border:         #e2e8f0;
+      --border-strong:  #cbd5e1;
+
+      /* Focus ring */
+      --ring:           rgba(79, 70, 229, 0.40);
+
+      /* Radii & shadow */
+      --radius:         16px;
+      --radius-sm:      10px;
+      --shadow:         0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-lg:      0 10px 30px rgba(79, 70, 229, 0.28);
+
+      /* Motion */
+      --ease:           cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ============================================
+       RESET & BASE
+       ============================================ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3 { font-family: "Poppins", sans-serif; line-height: 1.25; }
+
+    /* Icons */
+    svg { display: block; }
+    .icon-sm { width: 20px; height: 20px; }
+    .icon-md { width: 24px; height: 24px; }
+
+    /* Shared focus style for keyboard users */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    .todo-checkbox:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+
+    /* Visually-hidden helper (for skip link / SR text) */
+    .visually-hidden {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0);
+      white-space: nowrap; border: 0;
+    }
+
+    /* ============================================
+       LAYOUT
+       ============================================ */
+    .app { width: 100%; max-width: 560px; }
+
+    .header { text-align: center; margin-bottom: 28px; }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+    .header h1 { font-size: 26px; font-weight: 700; color: var(--text); }
+    .header p  { font-size: 15px; color: var(--text-muted); }
+
+    /* ============================================
+       CARD SURFACES
+       ============================================ */
+    .welcome,
+    .card,
+    .results-header,
+    .todo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* ---- WELCOME SCREEN ---- */
+    .welcome { padding: 40px 32px; text-align: center; }
+
+    .welcome-icon {
+      display: grid;
+      place-items: center;
+      width: 64px; height: 64px;
+      margin: 0 auto 20px;
+      border-radius: 18px;
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .welcome-icon svg { width: 32px; height: 32px; }
+
+    .welcome h2 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+    .welcome p  { font-size: 15px; color: var(--text-muted); margin-bottom: 24px; max-width: 42ch; margin-inline: auto; }
+    .welcome .hint { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+
+    /* ---- FLASHCARD ---- */
+    .card-container { perspective: 1000px; }
+
+    .card { padding: 32px 32px 28px; animation: slideIn 0.35s var(--ease); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(32px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      width: 100%; height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 99px;
+      transition: width 0.45s var(--ease);
+    }
+
+    .question-number {
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .question-text {
+      font-size: 21px; font-weight: 600;
+      color: var(--text);
+      margin-bottom: 24px; line-height: 1.35;
+    }
+
+    /* Answer options */
+    .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+
+    .option-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      min-height: 56px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-family: inherit;
+      text-align: left;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.18s var(--ease), background-color 0.18s var(--ease);
+    }
+    .option-btn .opt-icon {
+      flex-shrink: 0;
+      display: grid; place-items: center;
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      background: var(--bg);
+      color: var(--text-muted);
+      transition: background-color 0.18s var(--ease), color 0.18s var(--ease);
+    }
+    .option-btn:hover { border-color: var(--primary); background: var(--primary-soft); }
+    .option-btn:hover .opt-icon { color: var(--primary); }
+
+    .option-btn.selected {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      font-weight: 600;
+    }
+    .option-btn.selected .opt-icon { background: var(--primary); color: #fff; }
+
+    /* Text input */
+    .text-input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px; /* >=16px avoids iOS zoom */
+      font-family: inherit;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      transition: border-color 0.18s var(--ease);
+      margin-bottom: 22px;
+    }
+    .text-input:focus { border-color: var(--primary); }
+    .text-input::placeholder { color: var(--text-faint); }
+
+    /* Buttons */
+    .next-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 12px 28px;
+      font-size: 15px; font-weight: 600;
+      font-family: inherit;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background-color 0.18s var(--ease), transform 0.18s var(--ease);
+    }
+    .next-btn:hover:not(:disabled) { background: var(--primary-hover); }
+    .next-btn:active:not(:disabled) { transform: translateY(1px); }
+    .next-btn:disabled { background: var(--border-strong); color: #f8fafc; cursor: not-allowed; }
+
+    .quiz-footer { display: flex; justify-content: flex-end; }
+
+    /* ---- RESULTS SCREEN ---- */
+    .results { animation: slideIn 0.4s var(--ease); }
+
+    .results-header { padding: 32px; text-align: center; margin-bottom: 16px; }
+    .results-icon {
+      display: grid; place-items: center;
+      width: 56px; height: 56px;
+      margin: 0 auto 14px;
+      border-radius: 16px;
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .results-icon svg { width: 28px; height: 28px; }
+    .results-header h2 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .results-header p  { font-size: 14px; color: var(--text-muted); }
+
+    /* Start Point card */
+    .start-point {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: var(--radius);
+      padding: 26px 28px;
+      color: #fff;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-lg);
+    }
+    .start-point .label {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      opacity: 0.92; margin-bottom: 10px;
+    }
+    .start-point h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .start-point p  { font-size: 14px; line-height: 1.65; opacity: 0.95; }
+
+    /* To-Do checklist */
+    .todo-card { padding: 26px 28px; }
+    .todo-card h3 {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 17px; font-weight: 700; color: var(--text);
+      margin-bottom: 14px;
+    }
+    .todo-card h3 svg { color: var(--primary); }
+    .todo-list { list-style: none; }
+
+    .todo-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .todo-item:last-child { border-bottom: none; }
+
+    .todo-checkbox {
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      margin-top: 1px;
+      padding: 0;
+      border: 2px solid var(--border-strong);
+      border-radius: 7px;
+      background: var(--surface);
+      cursor: pointer;
+      display: grid; place-items: center;
+      color: #fff;
+      transition: background-color 0.18s var(--ease), border-color 0.18s var(--ease);
+    }
+    .todo-checkbox svg { width: 14px; height: 14px; opacity: 0; transition: opacity 0.15s var(--ease); }
+    .todo-checkbox[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); }
+    .todo-checkbox[aria-pressed="true"] svg { opacity: 1; }
+
+    .todo-text { font-size: 14px; color: var(--text); line-height: 1.5; padding-top: 1px; }
+    .todo-item.done .todo-text { text-decoration: line-through; color: var(--text-faint); }
+
+    /* Restart button */
+    .restart-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      margin-top: 16px;
+      min-height: 50px;
+      padding: 14px;
+      font-size: 15px; font-weight: 600;
+      font-family: inherit;
+      background: var(--surface);
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background-color 0.18s var(--ease);
+    }
+    .restart-btn:hover { background: var(--primary-soft); }
+
+    .hidden { display: none; }
+
+    /* ============================================
+       MOTION PREFERENCES
+       ============================================ */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 420px) {
+      .welcome { padding: 32px 22px; }
+      .card { padding: 26px 22px 24px; }
+      .results-header, .start-point, .todo-card { padding-left: 22px; padding-right: 22px; }
+      .question-text { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER — shown on every screen -->
+  <header class="header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+        </svg>
+      </span>
+      <h1>Your Marketer</h1>
+    </div>
+    <p>Find your starting point in 2 minutes</p>
+  </header>
+
+  <main>
+    <!-- ============================================
+         SCREEN 1: WELCOME
+         ============================================ -->
+    <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+      <div class="welcome-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+        </svg>
+      </div>
+      <h2 id="welcome-title">Not sure where to start with marketing?</h2>
+      <p>
+        Answer a few simple questions about your business. We'll give you a
+        personalized starting point and a to-do checklist you can actually follow.
+      </p>
+      <p class="hint">Takes about 2 minutes. No sign-up needed.</p>
+      <button class="next-btn" onclick="startQuiz()">
+        Let's Go
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+    </section>
+
+    <!-- ============================================
+         SCREEN 2: FLASHCARD QUESTIONS
+         ============================================ -->
+    <section id="quiz" class="hidden" aria-label="Marketing questionnaire">
+      <div class="card-container">
+        <div id="card" class="card">
+          <!-- Progress bar -->
+          <div id="progressBar" class="progress-bar" role="progressbar"
+               aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+          </div>
+
+          <div id="questionNumber" class="question-number"></div>
+          <h2 id="questionText" class="question-text" aria-live="polite"></h2>
+
+          <!-- Answer area — filled dynamically -->
+          <div id="answerArea"></div>
+
+          <div class="quiz-footer">
+            <button id="nextBtn" class="next-btn" onclick="nextQuestion()" disabled>
+              Next
+              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SCREEN 3: RESULTS
+         ============================================ -->
+    <section id="results" class="results hidden" aria-labelledby="results-title">
+      <div class="results-header">
+        <div class="results-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>
+          </svg>
+        </div>
+        <h2 id="results-title">Your Marketing Roadmap</h2>
+        <p id="resultsSummary"></p>
+      </div>
+
+      <!-- Start Point -->
+      <div id="startPoint" class="start-point">
+        <div class="label">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+          </svg>
+          Your Start Point
+        </div>
+        <h3 id="startPointTitle"></h3>
+        <p id="startPointDesc"></p>
+      </div>
+
+      <!-- To-Do Checklist -->
+      <div class="todo-card">
+        <h3>
+          <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+          </svg>
+          Your To-Do Checklist
+        </h3>
+        <ul id="todoList" class="todo-list"></ul>
+      </div>
+
+      <button class="restart-btn" onclick="restart()">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+        </svg>
+        Start Over
+      </button>
+    </section>
+  </main>
+
+</div>
+
+<script>
+// ============================================
+//  ICONS — inline SVG (Lucide-style), no emoji
+// ============================================
+const ICONS = {
+  home:         '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  globe:        '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  building:     '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/>',
+  help:         '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  xCircle:      '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+  smartphone:   '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+  monitor:      '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+  checkCircle:  '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
+  ban:          '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  calendar:     '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+  calendarDays: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/>',
+  flame:        '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  wallet:       '<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>',
+  banknote:     '<rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+  creditCard:   '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+  landmark:     '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+  megaphone:    '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  phone:        '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  cart:         '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+  repeat:       '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>'
+};
+
+function svg(name) {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+         'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+         (ICONS[name] || '') + '</svg>';
+}
+
+
+// ============================================
+//  QUESTIONS — The flashcard data
+// ============================================
+const questions = [
+  {
+    id: "product",
+    text: "What do you sell?",
+    type: "text",
+    placeholder: "e.g. Handmade cakes, Plumbing services, Yoga classes..."
+  },
+  {
+    id: "audience",
+    text: "Who are your typical customers?",
+    type: "choice",
+    options: [
+      { value: "local",    icon: "home",     label: "Local people in my area" },
+      { value: "online",   icon: "globe",    label: "Anyone online (nationwide / global)" },
+      { value: "business", icon: "building", label: "Other businesses (B2B)" },
+      { value: "unsure",   icon: "help",     label: "Not sure yet" }
+    ]
+  },
+  {
+    id: "online_presence",
+    text: "Do you have any online presence right now?",
+    type: "choice",
+    options: [
+      { value: "none",    icon: "xCircle",     label: "No website, no social media" },
+      { value: "social",  icon: "smartphone",  label: "Social media only (Facebook, Instagram…)" },
+      { value: "website", icon: "monitor",     label: "Website only" },
+      { value: "both",    icon: "checkCircle", label: "Both website and social media" }
+    ]
+  },
+  {
+    id: "posting",
+    text: "How often do you post or share content online?",
+    type: "choice",
+    options: [
+      { value: "never",  icon: "ban",          label: "I never post" },
+      { value: "rarely", icon: "calendar",     label: "A few times a month" },
+      { value: "weekly", icon: "calendarDays", label: "About once a week" },
+      { value: "daily",  icon: "flame",        label: "Almost every day" }
+    ]
+  },
+  {
+    id: "budget",
+    text: "What's your monthly marketing budget?",
+    type: "choice",
+    options: [
+      { value: "zero",   icon: "wallet",     label: "$0 — I want free methods only" },
+      { value: "small",  icon: "banknote",   label: "Under $100 / month" },
+      { value: "medium", icon: "creditCard", label: "$100 – $500 / month" },
+      { value: "large",  icon: "landmark",   label: "Over $500 / month" }
+    ]
+  },
+  {
+    id: "goal",
+    text: "What's your #1 goal right now?",
+    type: "choice",
+    options: [
+      { value: "awareness", icon: "megaphone", label: "Get more people to know I exist" },
+      { value: "leads",     icon: "phone",     label: "Get more inquiries / calls" },
+      { value: "sales",     icon: "cart",      label: "Get more sales right now" },
+      { value: "repeat",    icon: "repeat",    label: "Get existing customers to come back" }
+    ]
+  }
+];
+
+
+// ============================================
+//  STATE
+// ============================================
+let currentQuestion = 0;
+let answers = {};
+
+
+// ============================================
+//  SCREEN 1 → quiz
+// ============================================
+function startQuiz() {
+  document.getElementById("welcome").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  showQuestion();
+}
+
+
+// ============================================
+//  SHOW ONE QUESTION
+// ============================================
+function showQuestion() {
+  const q = questions[currentQuestion];
+
+  // Progress bar
+  const pct = (currentQuestion / questions.length) * 100;
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("progressBar").setAttribute("aria-valuenow", Math.round(pct));
+
+  document.getElementById("questionNumber").textContent =
+    "Question " + (currentQuestion + 1) + " of " + questions.length;
+  document.getElementById("questionText").textContent = q.text;
+
+  document.getElementById("nextBtn").disabled = true;
+
+  const area = document.getElementById("answerArea");
+  area.innerHTML = "";
+
+  if (q.type === "text") {
+    const wrap = document.createElement("div");
+
+    const label = document.createElement("label");
+    label.className = "visually-hidden";
+    label.setAttribute("for", "input-" + q.id);
+    label.textContent = q.text;
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "text-input";
+    input.placeholder = q.placeholder || "Type your answer...";
+    input.id = "input-" + q.id;
+    input.value = answers[q.id] || "";
+
+    input.addEventListener("input", function () {
+      document.getElementById("nextBtn").disabled = (input.value.trim() === "");
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && input.value.trim() !== "") nextQuestion();
+    });
+
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    area.appendChild(wrap);
+
+    document.getElementById("nextBtn").disabled = (input.value.trim() === "");
+    setTimeout(() => input.focus(), 100);
+
+  } else if (q.type === "choice") {
+    const list = document.createElement("div");
+    list.className = "options";
+    list.setAttribute("role", "radiogroup");
+    list.setAttribute("aria-label", q.text);
+
+    q.options.forEach(function (opt) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "option-btn";
+      btn.dataset.value = opt.value;
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-checked", answers[q.id] === opt.value ? "true" : "false");
+      btn.innerHTML = '<span class="opt-icon">' + svg(opt.icon) + '</span>' +
+                      '<span class="opt-label">' + opt.label + '</span>';
+
+      if (answers[q.id] === opt.value) {
+        btn.classList.add("selected");
+        document.getElementById("nextBtn").disabled = false;
+      }
+
+      btn.addEventListener("click", function () {
+        list.querySelectorAll(".option-btn").forEach(b => {
+          b.classList.remove("selected");
+          b.setAttribute("aria-checked", "false");
+        });
+        btn.classList.add("selected");
+        btn.setAttribute("aria-checked", "true");
+        document.getElementById("nextBtn").disabled = false;
+      });
+
+      list.appendChild(btn);
+    });
+    area.appendChild(list);
+  }
+
+  // Re-trigger slide-in
+  const card = document.getElementById("card");
+  card.style.animation = "none";
+  card.offsetHeight; // force reflow
+  card.style.animation = "";
+}
+
+
+// ============================================
+//  NEXT QUESTION
+// ============================================
+function nextQuestion() {
+  const q = questions[currentQuestion];
+
+  if (q.type === "text") {
+    const input = document.getElementById("input-" + q.id);
+    answers[q.id] = input.value.trim();
+  } else if (q.type === "choice") {
+    const selected = document.querySelector(".option-btn.selected");
+    if (selected) answers[q.id] = selected.dataset.value;
+  }
+
+  currentQuestion++;
+  if (currentQuestion < questions.length) {
+    showQuestion();
+  } else {
+    showResults();
+  }
+}
+
+
+// ============================================
+//  SCREEN 3: RESULTS
+// ============================================
+function showResults() {
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("results").classList.remove("hidden");
+  document.getElementById("progressFill").style.width = "100%";
+  document.getElementById("progressBar").setAttribute("aria-valuenow", 100);
+
+  const startPoint = getStartPoint();
+  document.getElementById("startPointTitle").textContent = startPoint.title;
+  document.getElementById("startPointDesc").textContent = startPoint.description;
+
+  const productName = answers.product || "your business";
+  document.getElementById("resultsSummary").textContent =
+    "Here's a custom marketing plan for " + productName + " based on your answers.";
+
+  const todos = getTodos();
+  const todoList = document.getElementById("todoList");
+  todoList.innerHTML = "";
+
+  todos.forEach(function (todo, i) {
+    const li = document.createElement("li");
+    li.className = "todo-item";
+
+    const checkbox = document.createElement("button");
+    checkbox.type = "button";
+    checkbox.className = "todo-checkbox";
+    checkbox.setAttribute("aria-pressed", "false");
+    checkbox.setAttribute("aria-label", "Mark complete: " + todo);
+    checkbox.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    const text = document.createElement("span");
+    text.className = "todo-text";
+    text.id = "todo-" + i;
+    text.textContent = todo;
+
+    checkbox.addEventListener("click", function () {
+      const done = checkbox.getAttribute("aria-pressed") === "true";
+      checkbox.setAttribute("aria-pressed", done ? "false" : "true");
+      li.classList.toggle("done", !done);
+    });
+
+    li.appendChild(checkbox);
+    li.appendChild(text);
+    todoList.appendChild(li);
+  });
+
+  document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+
+// ============================================
+//  BRAIN — Start Point
+// ============================================
+function getStartPoint() {
+  const presence = answers.online_presence;
+  const posting  = answers.posting;
+  const goal     = answers.goal;
+
+  if (presence === "none") {
+    return {
+      title: "Set Up Your Online Foundation",
+      description:
+        "You don't have any online presence yet, so everything else depends on this " +
+        "first step. Don't worry — you can set up a Google Business Profile and a simple " +
+        "Facebook page in under an hour, completely free. This is your #1 priority."
+    };
+  }
+  if (posting === "never") {
+    return {
+      title: "Start Posting Consistently",
+      description:
+        "You have some online presence, but you're not sharing anything yet. People " +
+        "can't find you if you're invisible! Start with just 2-3 posts per week. Share " +
+        "photos of your work, helpful tips, or customer stories. Consistency beats perfection."
+    };
+  }
+  if (posting === "rarely") {
+    return {
+      title: "Build a Content Rhythm",
+      description:
+        "You're posting a little, which is great! Now let's make it a habit. Pick 3 days " +
+        "a week (e.g. Mon/Wed/Fri) and schedule your posts in advance. Use free tools like " +
+        "Meta Business Suite or Canva to make this easier."
+    };
+  }
+  if (goal === "sales" || goal === "leads") {
+    return {
+      title: "Turn Followers into Customers",
+      description:
+        "You're doing the right things with content — now let's convert that attention " +
+        "into actual business. Add clear calls-to-action to every post (\"Call now\", " +
+        "\"Book here\", \"DM for pricing\"). Make it super easy for people to take the next step."
+    };
+  }
+  if (goal === "repeat") {
+    return {
+      title: "Bring Customers Back",
+      description:
+        "Getting new customers is expensive. The smartest move is to get your existing " +
+        "customers to buy again. Start a simple loyalty program, send follow-up messages " +
+        "after purchases, or offer a \"welcome back\" discount."
+    };
+  }
+  return {
+    title: "Level Up Your Marketing",
+    description:
+      "You've got the basics covered! Your next step is to get more strategic. Pick ONE " +
+      "platform where your customers spend time, and go deep there instead of spreading " +
+      "thin across everything."
+  };
+}
+
+
+// ============================================
+//  BRAIN — To-Do Checklist
+// ============================================
+function getTodos() {
+  const todos = [];
+  const presence = answers.online_presence;
+  const posting  = answers.posting;
+  const budget   = answers.budget;
+  const goal     = answers.goal;
+  const audience = answers.audience;
+
+  if (presence === "none") {
+    todos.push("Create a Google Business Profile (free, takes 20 min)");
+    todos.push("Set up a Facebook Business Page with your hours, location, and photos");
+    todos.push("Add a profile photo and cover image that show what you do");
+  }
+  if (presence === "none" || presence === "social") {
+    todos.push("Build a simple website (use Wix, Squarespace, or Carrd — all have free plans)");
+  }
+  if (presence === "none" || presence === "website") {
+    todos.push("Create an Instagram or Facebook page where your customers hang out");
+  }
+
+  if (posting === "never" || posting === "rarely") {
+    todos.push("Plan 3 posts for next week (tips, behind-the-scenes, or a customer photo)");
+    todos.push("Set a reminder on your phone to post every Mon / Wed / Fri");
+  }
+  if (posting === "never" || posting === "rarely" || posting === "weekly") {
+    todos.push("Use Canva (free) to make your posts look more professional");
+  }
+
+  if (audience === "local") {
+    todos.push("Ask 3 happy customers to leave you a Google review this week");
+    todos.push("Join a local Facebook group and be helpful (don't spam!)");
+  }
+  if (audience === "online") {
+    todos.push("Research 5 hashtags your target customers use and include them in posts");
+    todos.push("Follow and engage with 10 accounts in your niche");
+  }
+  if (audience === "business") {
+    todos.push("Create a LinkedIn profile or company page for your business");
+    todos.push("Write one helpful article or post that shows your expertise");
+  }
+
+  if (goal === "awareness") {
+    todos.push("Share a \"Who we are\" post introducing your business story");
+    todos.push("Ask friends and family to share your page with their networks");
+  }
+  if (goal === "leads" || goal === "sales") {
+    todos.push("Add your phone number and contact info to every social profile");
+    todos.push("Create one special offer or discount to attract new customers");
+  }
+  if (goal === "repeat") {
+    todos.push("Collect customer phone numbers or emails (even a notebook works!)");
+    todos.push("Send a \"We miss you\" message or offer to past customers");
+  }
+
+  if (budget === "small" || budget === "medium" || budget === "large") {
+    todos.push("Boost your best-performing post with a small ad ($5-10) to test");
+  }
+  if (budget === "medium" || budget === "large") {
+    todos.push("Run a targeted Facebook/Instagram ad to people in your area");
+  }
+  if (budget === "large") {
+    todos.push("Consider hiring a freelancer for a few hours to set up your ads properly");
+  }
+
+  todos.push("Check your messages and comments daily — respond within a few hours");
+  return todos;
+}
+
+
+// ============================================
+//  RESTART
+// ============================================
+function restart() {
+  currentQuestion = 0;
+  answers = {};
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("welcome").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+</script>
+
+</body>
+</html>

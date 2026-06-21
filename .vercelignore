@@ -1,0 +1,6 @@
+# Files Vercel doesn't need (server.js is only for local `npm start`)
+server.js
+README.md
+.env.example
+leads.json
+leads.csv

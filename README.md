@@ -87,33 +87,60 @@ Every submission is appended to two files (both gitignored, so they stay private
 - **`leads.csv`** — open in Excel / Google Sheets (`date, name, email, product, start_point`).
 - **`leads.json`** — the same data plus each visitor's full answers.
 
+## Deploying to Vercel
+
+The app is set up to run on Vercel with no code changes:
+
+- `index.html` is served as a static page.
+- `api/generate.js` runs as a serverless function (it shares all its logic with
+  local dev via `lib/generate.js`).
+
+Steps:
+
+1. Push to GitHub and import the repo at https://vercel.com/new.
+2. In **Settings → Environment Variables**, add the same keys as your `.env`:
+   `GROQ_API_KEY`, and (optional) `GMAIL_USER`, `GMAIL_APP_PASSWORD`,
+   `LEAD_NOTIFY_EMAIL`. Your local `.env` is never uploaded — Vercel uses these.
+3. **Deploy** (or redeploy after adding the variables).
+
+> **Leads on Vercel:** serverless filesystems are temporary, so `leads.csv` /
+> `leads.json` are **not** written in production — the app detects Vercel and
+> skips file-saving. You still capture every lead through the **owner
+> notification email**. (Want a stored list? Add a database or Google Sheet.)
+>
+> Locally (`npm start`) file-saving works as normal.
+
 ## How it works
 
 ```
-                       ┌─────────────────────────────────────────┐
-Browser (index.html)   │              server.js                   │
-  quiz → name/email ──▶│  POST /api/generate                      │
-        ▲              │   1. ask Groq for the plan ───▶ Groq API │
-        │              │   2. save lead → leads.csv / leads.json  │
-        │              │   3. email plan + lead copy ──▶ Gmail    │
-        └── JSON plan ─┤   4. return the plan                     │
-                       └─────────────────────────────────────────┘
-                          (all secret keys stay here, from .env)
+                          ┌──────────────────────────────────────────┐
+Browser (index.html)      │   lib/generate.js  (shared logic)         │
+  quiz → name/email ─────▶│    1. ask Groq for the plan ──▶ Groq API  │
+        ▲                 │    2. save lead (local only) → leads.csv  │
+        │                 │    3. email plan + lead copy ──▶ Gmail    │
+        └──── JSON plan ──┤    4. return the plan                     │
+                          └──────────────────────────────────────────┘
+            called by:  server.js (local)  ·  api/generate.js (Vercel)
+                          (all secret keys stay server-side, from env)
 ```
 
 - **`index.html`** — the quiz UI. After the questions it collects name + email,
-  calls the backend, shows a loading spinner, then renders the AI's plan. It also
-  saves progress to `localStorage` and offers Download / Copy. If the backend
-  call fails it uses the built-in `getStartPoint()` / `getTodos()` fallback.
-- **`server.js`** — a tiny [Express](https://expressjs.com) server with one route,
-  `/api/generate`. It calls Groq, saves the lead, and emails the plan. **All
-  secret keys live here only**, never in the browser. Saving and emailing are
-  "best effort" — the visitor always gets their plan even if those steps fail.
+  calls `/api/generate`, shows a loading spinner, then renders the AI's plan. It
+  also saves progress to `localStorage` and offers Download / Copy. If the
+  backend call fails it uses the built-in `getStartPoint()` / `getTodos()` fallback.
+- **`lib/generate.js`** — the shared "brain": calls Groq, saves the lead, and
+  emails the plan. Saving and emailing are "best effort" — the visitor always
+  gets their plan even if those steps fail. Secrets are read from env, never sent
+  to the browser.
+- **`server.js`** — local-only [Express](https://expressjs.com) server (`npm start`)
+  that serves the page and calls `lib/generate.js`.
+- **`api/generate.js`** — the Vercel serverless version of the same route, also
+  calling `lib/generate.js`.
 - **`.env`** — your secrets: `GROQ_API_KEY` and (optional) the Gmail settings
-  (gitignored).
+  (gitignored). On Vercel these live in the project's env-var settings instead.
 - **`.env.example`** — a safe template you can commit.
 
-To change the AI's behavior, edit the prompt in `server.js`. To customize the
+To change the AI's behavior, edit the prompt in `lib/generate.js`. To customize the
 quiz questions, edit the `questions` array in `index.html`.
 
 ## Tech

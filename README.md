@@ -7,6 +7,8 @@ A friendly, no-sign-up web app that helps small business owners figure out
 and get an **AI-personalized** starting point plus an actionable to-do checklist
 written specifically for your business.
 
+![Your Marketer — the 6-question quiz and the AI-generated marketing plan](screenshots/app.png)
+
 ## Features
 
 - **2-minute flashcard quiz** — 6 questions covering your product, audience,

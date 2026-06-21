@@ -1,5 +1,10 @@
 .DS_Store
-.claude/
+
+# Claude Code — keep this project's own skill + agent in the repo,
+# but ignore local settings and the bundled third-party ui-ux-pro-max skill
+.claude/settings.local.json
+.claude/skills/ui-ux-pro-max/
+**/__pycache__/
 
 # Secrets — never commit your real key
 .env

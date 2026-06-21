@@ -2,59 +2,127 @@
 
 A friendly, no-sign-up web app that helps small business owners figure out
 **where to start with marketing**. Answer 6 quick questions about your business
-and get a personalized starting point plus an actionable to-do checklist you can
-actually follow.
+and get an **AI-personalized** starting point plus an actionable to-do checklist
+written specifically for your business.
 
 ## Features
 
 - **2-minute flashcard quiz** — 6 questions covering your product, audience,
   online presence, posting habits, budget, and #1 goal.
-- **Personalized start point** — a prioritized recommendation based on your
-  answers (e.g. "Set Up Your Online Foundation" vs. "Turn Followers into
-  Customers").
-- **Custom to-do checklist** — concrete, tickable tasks tailored to your
-  presence, audience, goal, and budget.
+- **AI-personalized plan** — your answers are sent to an AI model (via
+  [Groq](https://groq.com)) that writes a custom "start point" and to-do
+  checklist for your exact business.
+- **Lead capture** — visitors enter their name + email to get their plan. Every
+  lead is saved to `leads.csv` / `leads.json` so you can follow up.
+- **Auto-email** — the plan is emailed to the visitor, and a "new lead" copy is
+  sent to you, straight from your Gmail.
+- **Save progress** — the plan and which tasks you've ticked are remembered in
+  your browser, so a refresh or closing the tab won't lose them.
+- **Download / Copy** — export the plan as a text file or copy it to the clipboard.
+- **Always works** — if the AI is unavailable (no key, offline), it falls back
+  to a built-in rules engine so you still get a useful plan.
 - **Fully accessible** — keyboard navigation, visible focus states, ARIA roles,
   and `prefers-reduced-motion` support.
-- **Zero dependencies, no build step** — a single static `index.html` file.
 
-## Getting started
+## Quick start
 
-It's a single HTML file, so there's nothing to install.
-
-**Open directly:**
+You need [Node.js](https://nodejs.org) installed (v18 or newer).
 
 ```bash
-open index.html          # macOS
-# or just double-click the file
+# 1. Install the small set of packages (one time)
+npm install
+
+# 2. Add your free Groq API key (see below)
+cp .env.example .env
+#    then open .env and paste your key after GROQ_API_KEY=
+
+# 3. Start the app
+npm start
+#    then visit http://localhost:3000
 ```
 
-**Serve locally** (recommended, so web fonts load over HTTP):
+> The app still runs without a key — it just uses the built-in fallback plan
+> instead of AI.
 
-```bash
-python3 -m http.server 4599
-# then visit http://localhost:4599
-```
+## Getting a free Groq API key
+
+1. Go to **https://console.groq.com** and sign up (free, no credit card).
+2. Open **https://console.groq.com/keys**.
+3. Click **Create API Key**, give it a name (e.g. "your-marketer"), and copy it.
+   You only see the full key once — copy it now.
+4. Open the `.env` file in this project and paste it:
+   ```
+   GROQ_API_KEY=gsk_your_real_key_here
+   ```
+5. Save, then run `npm start` (restart it if it was already running).
+
+**Keep your key private.** The `.env` file is listed in `.gitignore`, so it is
+**never** uploaded to GitHub. Never paste your key into `index.html` or any file
+that gets committed.
+
+## Setting up email (optional, via Gmail)
+
+This lets the app email each visitor their plan and send you a "new lead" copy.
+The app works fine without it — it just won't send emails.
+
+1. Turn on **2-Step Verification** for your Google account
+   (https://myaccount.google.com/security).
+2. Create an **App Password** at https://myaccount.google.com/apppasswords —
+   pick "Mail", name it "your-marketer", and copy the 16-character password.
+3. Add these to your `.env`:
+   ```
+   GMAIL_USER=you@gmail.com
+   GMAIL_APP_PASSWORD=your16charapppassword
+   LEAD_NOTIFY_EMAIL=        # optional; where your lead copy goes (defaults to GMAIL_USER)
+   ```
+4. Restart the app. On start it prints `Email sending: ON (via Gmail)` when set up.
+
+> An **App Password** is a special one-app password — it is *not* your normal
+> Gmail password, and you can revoke it anytime without changing your account.
+
+### Where your leads go
+
+Every submission is appended to two files (both gitignored, so they stay private):
+
+- **`leads.csv`** — open in Excel / Google Sheets (`date, name, email, product, start_point`).
+- **`leads.json`** — the same data plus each visitor's full answers.
 
 ## How it works
 
-Everything lives in [`index.html`](index.html):
+```
+                       ┌─────────────────────────────────────────┐
+Browser (index.html)   │              server.js                   │
+  quiz → name/email ──▶│  POST /api/generate                      │
+        ▲              │   1. ask Groq for the plan ───▶ Groq API │
+        │              │   2. save lead → leads.csv / leads.json  │
+        │              │   3. email plan + lead copy ──▶ Gmail    │
+        └── JSON plan ─┤   4. return the plan                     │
+                       └─────────────────────────────────────────┘
+                          (all secret keys stay here, from .env)
+```
 
-- **Markup** — three screens (Welcome → Quiz → Results) toggled via a `.hidden`
-  class.
-- **Styles** — CSS custom-property design tokens (indigo/violet brand), Poppins
-  headings + Open Sans body, Flat Design, responsive down to 375px.
-- **Logic** — vanilla JavaScript:
-  - `questions` — the quiz data (text and choice types, each with an SVG icon).
-  - `getStartPoint()` — the "brain" that picks your prioritized start point.
-  - `getTodos()` — builds the personalized checklist from your answers.
+- **`index.html`** — the quiz UI. After the questions it collects name + email,
+  calls the backend, shows a loading spinner, then renders the AI's plan. It also
+  saves progress to `localStorage` and offers Download / Copy. If the backend
+  call fails it uses the built-in `getStartPoint()` / `getTodos()` fallback.
+- **`server.js`** — a tiny [Express](https://expressjs.com) server with one route,
+  `/api/generate`. It calls Groq, saves the lead, and emails the plan. **All
+  secret keys live here only**, never in the browser. Saving and emailing are
+  "best effort" — the visitor always gets their plan even if those steps fail.
+- **`.env`** — your secrets: `GROQ_API_KEY` and (optional) the Gmail settings
+  (gitignored).
+- **`.env.example`** — a safe template you can commit.
 
-To customize the quiz, edit the `questions` array; to change the
-recommendations, edit `getStartPoint()` and `getTodos()`.
+To change the AI's behavior, edit the prompt in `server.js`. To customize the
+quiz questions, edit the `questions` array in `index.html`.
 
 ## Tech
 
-Plain HTML, CSS, and JavaScript. No frameworks, no build tooling. Icons are
-inline [Lucide](https://lucide.dev)-style SVGs; fonts are
-[Poppins](https://fonts.google.com/specimen/Poppins) and
-[Open Sans](https://fonts.google.com/specimen/Open+Sans) via Google Fonts.
+- Frontend: plain HTML, CSS, and JavaScript — inline
+  [Lucide](https://lucide.dev)-style SVG icons;
+  [Poppins](https://fonts.google.com/specimen/Poppins) +
+  [Open Sans](https://fonts.google.com/specimen/Open+Sans) fonts.
+- Backend: [Node.js](https://nodejs.org) + [Express](https://expressjs.com) +
+  [dotenv](https://github.com/motdotla/dotenv) +
+  [Nodemailer](https://nodemailer.com) (Gmail).
+- AI: [Groq](https://groq.com) (`llama-3.3-70b-versatile`, OpenAI-compatible API).

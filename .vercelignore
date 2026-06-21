@@ -1,5 +1,4 @@
-# Files Vercel doesn't need (server.js is only for local `npm start`)
-server.js
+# Files Vercel doesn't need to deploy
 README.md
 .env.example
 leads.json

@@ -1,4 +1,5 @@
-# Files Vercel doesn't need to deploy
+# Local-dev / non-deployed files (Vercel uses index.html + api/generate.js)
+server.js
 README.md
 .env.example
 leads.json

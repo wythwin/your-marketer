@@ -1,13 +1,10 @@
 # Screenshots
 
-Add a screenshot of the app here named **`app.png`** — the README links to
-`screenshots/app.png`.
+App screenshots used in the main README:
 
-How to capture one:
+- `home.png` — welcome screen
+- `quiz.png` — a flashcard question
+- `checklist.png` — the AI-generated plan + to-do checklist
 
-1. Open the live app: https://your-marketer.vercel.app
-2. Take a screenshot (macOS: `Cmd + Shift + 4`, then drag over the app).
-3. Save it as `screenshots/app.png` in this folder.
-4. Commit it: `git add screenshots/app.png && git commit -m "Add app screenshot"`.
-
-A good shot shows the results screen (the Start Point + the to-do checklist).
+To refresh one, retake it from https://your-marketer.vercel.app, save it over the
+matching file here, and commit.

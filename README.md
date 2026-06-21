@@ -7,7 +7,7 @@ A friendly, no-sign-up web app that helps small business owners figure out
 and get an **AI-personalized** starting point plus an actionable to-do checklist
 written specifically for your business.
 
-![Your Marketer — the 6-question quiz and the AI-generated marketing plan](screenshots/app.png)
+![Your Marketer — welcome screen](screenshots/home.png)
 
 ## Features
 
@@ -27,6 +27,12 @@ written specifically for your business.
   to a built-in rules engine so you still get a useful plan.
 - **Fully accessible** — keyboard navigation, visible focus states, ARIA roles,
   and `prefers-reduced-motion` support.
+
+## Screenshots
+
+| The quiz | The AI plan + checklist |
+|---|---|
+| ![Flashcard question](screenshots/quiz.png) | ![To-do checklist result](screenshots/checklist.png) |
 
 ## Quick start
 

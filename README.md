@@ -89,11 +89,9 @@ Every submission is appended to two files (both gitignored, so they stay private
 
 ## Deploying to Vercel
 
-The app is set up to run on Vercel with no code changes:
-
-- `index.html` is served as a static page.
-- `api/generate.js` runs as a serverless function (it shares all its logic with
-  local dev via `lib/generate.js`).
+Vercel detects the Express app in `server.js` and runs it for you — the same
+file you use locally (it only calls `listen()` when run directly, so Vercel
+imports the app instead).
 
 Steps:
 
@@ -120,7 +118,7 @@ Browser (index.html)      │   lib/generate.js  (shared logic)         │
         │                 │    3. email plan + lead copy ──▶ Gmail    │
         └──── JSON plan ──┤    4. return the plan                     │
                           └──────────────────────────────────────────┘
-            called by:  server.js (local)  ·  api/generate.js (Vercel)
+              served by:  server.js (Express — runs locally & on Vercel)
                           (all secret keys stay server-side, from env)
 ```
 
@@ -128,14 +126,13 @@ Browser (index.html)      │   lib/generate.js  (shared logic)         │
   calls `/api/generate`, shows a loading spinner, then renders the AI's plan. It
   also saves progress to `localStorage` and offers Download / Copy. If the
   backend call fails it uses the built-in `getStartPoint()` / `getTodos()` fallback.
+- **`server.js`** — the [Express](https://expressjs.com) app that serves the page
+  and exposes `/api/generate`. Runs locally via `npm start`; on Vercel the app is
+  imported and run automatically.
 - **`lib/generate.js`** — the shared "brain": calls Groq, saves the lead, and
   emails the plan. Saving and emailing are "best effort" — the visitor always
   gets their plan even if those steps fail. Secrets are read from env, never sent
   to the browser.
-- **`server.js`** — local-only [Express](https://expressjs.com) server (`npm start`)
-  that serves the page and calls `lib/generate.js`.
-- **`api/generate.js`** — the Vercel serverless version of the same route, also
-  calling `lib/generate.js`.
 - **`.env`** — your secrets: `GROQ_API_KEY` and (optional) the Gmail settings
   (gitignored). On Vercel these live in the project's env-var settings instead.
 - **`.env.example`** — a safe template you can commit.

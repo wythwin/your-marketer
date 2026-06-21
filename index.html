@@ -350,6 +350,71 @@
     }
     .restart-btn:hover { background: var(--primary-soft); }
 
+    /* Loading state — shown while the AI is thinking */
+    .loading-state {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 44px 32px;
+      text-align: center;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      margin: 0 auto 18px;
+      border: 4px solid var(--primary-soft);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state p { color: var(--text-muted); font-size: 15px; }
+
+    /* Small footnote under the plan (AI vs. fallback) */
+    .ai-note {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      margin-top: 14px;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .ai-note svg { color: var(--primary); }
+    .ai-note.error { color: #b45309; }
+
+    /* Lead-capture form */
+    .field { text-align: left; margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 13px; font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .field .text-input { margin-bottom: 0; }
+    .field-error {
+      text-align: left;
+      color: #b45309;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    #leadForm .next-btn { width: 100%; justify-content: center; }
+    .privacy-note { font-size: 12px; color: var(--text-muted); margin-top: 14px; }
+
+    /* Result action buttons (Download / Copy) */
+    .result-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .action-btn {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 48px;
+      padding: 12px;
+      font-size: 14px; font-weight: 600;
+      font-family: inherit;
+      background: var(--surface);
+      color: var(--text);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color 0.18s var(--ease), background-color 0.18s var(--ease);
+    }
+    .action-btn:hover { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+
     .hidden { display: none; }
 
     /* ============================================
@@ -446,6 +511,38 @@
     </section>
 
     <!-- ============================================
+         SCREEN 2.5: LEAD CAPTURE (name + email)
+         ============================================ -->
+    <section id="leadCapture" class="welcome hidden" aria-labelledby="lead-title">
+      <div class="welcome-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+      </div>
+      <h2 id="lead-title">Where should we send your plan?</h2>
+      <p>Pop in your details and we'll email your personalized marketing roadmap straight to you.</p>
+
+      <form id="leadForm" novalidate onsubmit="submitLead(event)">
+        <div class="field">
+          <label for="leadName">Your name</label>
+          <input id="leadName" class="text-input" type="text" autocomplete="name" placeholder="Jane Smith" required>
+        </div>
+        <div class="field">
+          <label for="leadEmail">Email address</label>
+          <input id="leadEmail" class="text-input" type="email" autocomplete="email" placeholder="jane@example.com" required>
+        </div>
+        <p id="leadError" class="field-error hidden" role="alert"></p>
+        <button type="submit" class="next-btn">
+          Get my plan
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+        <p class="privacy-note">We'll only use your email to send your plan. No spam, ever.</p>
+      </form>
+    </section>
+
+    <!-- ============================================
          SCREEN 3: RESULTS
          ============================================ -->
     <section id="results" class="results hidden" aria-labelledby="results-title">
@@ -459,6 +556,14 @@
         <p id="resultsSummary"></p>
       </div>
 
+      <!-- Loading — shown while the AI builds the plan -->
+      <div id="loadingState" class="loading-state hidden" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Asking AI to build your custom marketing roadmap…</p>
+      </div>
+
+      <!-- AI-generated plan (Start Point + checklist) -->
+      <div id="planContent">
       <!-- Start Point -->
       <div id="startPoint" class="start-point">
         <div class="label">
@@ -483,6 +588,24 @@
         </h3>
         <ul id="todoList" class="todo-list"></ul>
       </div>
+
+      <p id="aiNote" class="ai-note hidden"></p>
+
+      <div class="result-actions">
+        <button class="action-btn" onclick="downloadPlan()">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+          </svg>
+          Download
+        </button>
+        <button id="copyBtn" class="action-btn" onclick="copyPlan()">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+          </svg>
+          <span id="copyLabel">Copy</span>
+        </button>
+      </div>
+      </div><!-- /planContent -->
 
       <button class="restart-btn" onclick="restart()">
         <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -602,6 +725,35 @@ const questions = [
 // ============================================
 let currentQuestion = 0;
 let answers = {};
+let leadInfo = {};        // { name, email }
+let currentPlan = null;   // { startPoint, todos }
+let checkedState = [];     // which checklist items are ticked
+
+
+// ============================================
+//  SAVED PROGRESS (survives refresh / closing the tab)
+// ============================================
+const STORE_KEY = "yourMarketer.v1";
+
+function saveState() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      answers: answers,
+      lead: leadInfo,
+      plan: currentPlan,
+      checked: checkedState
+    }));
+  } catch (e) { /* storage may be unavailable; ignore */ }
+}
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)); }
+  catch (e) { return null; }
+}
+
+function clearState() {
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+}
 
 
 // ============================================
@@ -725,29 +877,146 @@ function nextQuestion() {
   if (currentQuestion < questions.length) {
     showQuestion();
   } else {
-    showResults();
+    showLeadCapture();
   }
+}
+
+
+// ============================================
+//  SCREEN 2.5: LEAD CAPTURE
+// ============================================
+function showLeadCapture() {
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("leadCapture").classList.remove("hidden");
+
+  // Pre-fill if we already know them (e.g. came back after a refresh)
+  if (leadInfo.name) document.getElementById("leadName").value = leadInfo.name;
+  if (leadInfo.email) document.getElementById("leadEmail").value = leadInfo.email;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  setTimeout(() => document.getElementById("leadName").focus(), 100);
+}
+
+function submitLead(event) {
+  event.preventDefault();
+
+  const name = document.getElementById("leadName").value.trim();
+  const email = document.getElementById("leadEmail").value.trim();
+  const errorEl = document.getElementById("leadError");
+
+  // Simple checks, with clear messages
+  if (name === "") {
+    return showLeadError("Please enter your name.");
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return showLeadError("Please enter a valid email address.");
+  }
+  errorEl.classList.add("hidden");
+
+  leadInfo = { name: name, email: email };
+  document.getElementById("leadCapture").classList.add("hidden");
+  showResults();
+}
+
+function showLeadError(msg) {
+  const errorEl = document.getElementById("leadError");
+  errorEl.textContent = msg;
+  errorEl.classList.remove("hidden");
 }
 
 
 // ============================================
 //  SCREEN 3: RESULTS
 // ============================================
-function showResults() {
+async function showResults() {
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("results").classList.remove("hidden");
   document.getElementById("progressFill").style.width = "100%";
   document.getElementById("progressBar").setAttribute("aria-valuenow", 100);
 
-  const startPoint = getStartPoint();
-  document.getElementById("startPointTitle").textContent = startPoint.title;
-  document.getElementById("startPointDesc").textContent = startPoint.description;
-
   const productName = answers.product || "your business";
   document.getElementById("resultsSummary").textContent =
     "Here's a custom marketing plan for " + productName + " based on your answers.";
 
-  const todos = getTodos();
+  // Show the loading spinner and hide the plan until it's ready.
+  const loading = document.getElementById("loadingState");
+  const planContent = document.getElementById("planContent");
+  const aiNote = document.getElementById("aiNote");
+  loading.classList.remove("hidden");
+  planContent.classList.add("hidden");
+  document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // Try the AI first; if anything goes wrong, fall back to the built-in logic
+  // so the app always shows a useful result (even with no key / offline).
+  let result, usedAI = true;
+  try {
+    result = await generatePlan(answers, leadInfo);
+  } catch (err) {
+    console.warn("AI request failed — using built-in plan instead:", err);
+    usedAI = false;
+    result = { startPoint: getStartPoint(), todos: getTodos(), emailed: false };
+  }
+
+  // Remember the plan + a fresh (all unchecked) tick list, and save it.
+  currentPlan = { startPoint: result.startPoint, todos: result.todos };
+  checkedState = new Array(currentPlan.todos.length).fill(false);
+  renderPlan(currentPlan);
+  saveState();
+
+  // Footnote: where the plan came from + whether we emailed it.
+  aiNote.classList.remove("hidden");
+  aiNote.innerHTML = "";
+  if (usedAI) {
+    aiNote.classList.remove("error");
+    aiNote.innerHTML = sparkleIcon();
+    const span = document.createElement("span");
+    span.textContent = result.emailed
+      ? "Personalized by AI · Sent to " + (leadInfo.email || "your email")
+      : "Personalized by AI";
+    aiNote.appendChild(span);
+  } else {
+    aiNote.classList.add("error");
+    aiNote.textContent = "AI unavailable — showing a smart default plan instead.";
+  }
+
+  loading.classList.add("hidden");
+  planContent.classList.remove("hidden");
+}
+
+
+// Ask our own backend (which safely calls Groq, saves the lead, and emails it).
+async function generatePlan(answers, lead) {
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: (lead && lead.name) || "",
+      email: (lead && lead.email) || "",
+      answers: answers
+    })
+  });
+  if (!res.ok) throw new Error("Server responded " + res.status);
+
+  const data = await res.json();
+  if (!data || !data.startPoint || !Array.isArray(data.todos)) {
+    throw new Error("Unexpected response from server");
+  }
+  return data;
+}
+
+
+// Paint a plan ({ startPoint, todos }) onto the results screen.
+// Uses checkedState[] to restore ticks, and saves on every toggle.
+function renderPlan(plan) {
+  const startPoint = plan.startPoint || {};
+  document.getElementById("startPointTitle").textContent = startPoint.title || "Your Start Point";
+  document.getElementById("startPointDesc").textContent = startPoint.description || "";
+
+  const todos = Array.isArray(plan.todos) ? plan.todos : [];
+  if (checkedState.length !== todos.length) {
+    checkedState = new Array(todos.length).fill(false);
+  }
+
   const todoList = document.getElementById("todoList");
   todoList.innerHTML = "";
 
@@ -758,9 +1027,13 @@ function showResults() {
     const checkbox = document.createElement("button");
     checkbox.type = "button";
     checkbox.className = "todo-checkbox";
-    checkbox.setAttribute("aria-pressed", "false");
     checkbox.setAttribute("aria-label", "Mark complete: " + todo);
     checkbox.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    // Restore any previously ticked state
+    const isDone = !!checkedState[i];
+    checkbox.setAttribute("aria-pressed", isDone ? "true" : "false");
+    li.classList.toggle("done", isDone);
 
     const text = document.createElement("span");
     text.className = "todo-text";
@@ -771,19 +1044,68 @@ function showResults() {
       const done = checkbox.getAttribute("aria-pressed") === "true";
       checkbox.setAttribute("aria-pressed", done ? "false" : "true");
       li.classList.toggle("done", !done);
+      checkedState[i] = !done;
+      saveState();
     });
 
     li.appendChild(checkbox);
     li.appendChild(text);
     todoList.appendChild(li);
   });
-
-  document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 
 // ============================================
-//  BRAIN — Start Point
+//  DOWNLOAD / COPY the plan
+// ============================================
+function planToText() {
+  if (!currentPlan) return "";
+  const sp = currentPlan.startPoint || {};
+  let out = "YOUR MARKETING ROADMAP\n";
+  if (answers.product) out += "For: " + answers.product + "\n";
+  out += "\nSTART POINT: " + (sp.title || "") + "\n";
+  out += (sp.description || "") + "\n";
+  out += "\nTO-DO CHECKLIST:\n";
+  (currentPlan.todos || []).forEach(function (t, i) {
+    out += (checkedState[i] ? "[x] " : "[ ] ") + t + "\n";
+  });
+  out += "\nMade with Your Marketer";
+  return out;
+}
+
+function downloadPlan() {
+  const blob = new Blob([planToText()], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "marketing-plan.txt";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function copyPlan() {
+  const label = document.getElementById("copyLabel");
+  try {
+    await navigator.clipboard.writeText(planToText());
+    label.textContent = "Copied!";
+    setTimeout(function () { label.textContent = "Copy"; }, 1500);
+  } catch (e) {
+    label.textContent = "Press Ctrl+C";
+    setTimeout(function () { label.textContent = "Copy"; }, 1500);
+  }
+}
+
+
+function sparkleIcon() {
+  return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>';
+}
+
+
+// ============================================
+//  FALLBACK BRAIN — Start Point
+//  Used only if the AI request fails (no key, offline, etc.).
 // ============================================
 function getStartPoint() {
   const presence = answers.online_presence;
@@ -923,10 +1245,54 @@ function getTodos() {
 function restart() {
   currentQuestion = 0;
   answers = {};
+  leadInfo = {};
+  currentPlan = null;
+  checkedState = [];
+  clearState();
+
   document.getElementById("results").classList.add("hidden");
+  document.getElementById("leadCapture").classList.add("hidden");
+  document.getElementById("quiz").classList.add("hidden");
   document.getElementById("welcome").classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+
+// ============================================
+//  RESTORE — if there's a saved plan, show it on load
+// ============================================
+function restoreSavedPlan() {
+  const saved = loadState();
+  if (!saved || !saved.plan) return; // nothing saved → normal welcome screen
+
+  answers = saved.answers || {};
+  leadInfo = saved.lead || {};
+  currentPlan = saved.plan;
+  checkedState = saved.checked || [];
+
+  document.getElementById("welcome").classList.add("hidden");
+  document.getElementById("results").classList.remove("hidden");
+  document.getElementById("loadingState").classList.add("hidden");
+  document.getElementById("planContent").classList.remove("hidden");
+  document.getElementById("progressFill").style.width = "100%";
+  document.getElementById("progressBar").setAttribute("aria-valuenow", 100);
+
+  const productName = answers.product || "your business";
+  document.getElementById("resultsSummary").textContent =
+    "Here's a custom marketing plan for " + productName + " based on your answers.";
+
+  renderPlan(currentPlan);
+
+  const aiNote = document.getElementById("aiNote");
+  aiNote.classList.remove("hidden");
+  aiNote.innerHTML = sparkleIcon();
+  const span = document.createElement("span");
+  span.textContent = "Your saved plan";
+  aiNote.appendChild(span);
+}
+
+// Run once when the page loads (script is at the end of <body>, so DOM is ready).
+restoreSavedPlan();
 </script>
 
 </body>

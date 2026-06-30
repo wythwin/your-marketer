@@ -1,6 +1,7 @@
 ---
 marp: true
 paginate: true
+auto-advance: 20
 ---
 
 # Your Marketer
